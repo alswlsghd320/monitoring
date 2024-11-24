@@ -2,7 +2,7 @@
 
 # 서비스 설정
 SERVICE_NAME="system_monitoring"
-PID_FILE="/var/run/$SERVICE_NAME.pid"
+PID_FILE="/run/$SERVICE_NAME.pid"
 BASE_DIR="/var/log/system_monitoring"
 RETENTION_DAYS=60
 
@@ -32,6 +32,15 @@ cleanup_old_logs() {
     find $BASE_DIR -type d -mtime +$RETENTION_DAYS -exec rm -rf {} \;
 }
 
+# 온도 확인 함수 (sensors 명령어 사용)
+check_temperature() {
+    if command -v sensors > /dev/null; then
+        sensors | grep -i "core\|temp" | grep ':' | tr -d '+' | sed 's/°C//'
+    else
+        echo "온도 센서를 찾을 수 없습니다."
+    fi
+}
+
 # 사용자 모니터링
 monitor_users() {
     local current_time=$(date +"%Y-%m-%d %H:%M:%S")
@@ -41,8 +50,8 @@ monitor_users() {
     echo "접속 사용자 수: $(who | wc -l)" >> $USER_LOG
     echo "사용자별 프로세스 수:" >> $USER_LOG
     ps -eo user | sort | uniq -c >> $USER_LOG
-    echo "상세 로그인 정보:" >> $USER_LOG
-    last | head -n 10 >> $USER_LOG
+    echo "SSH 접속 기록:" >> $USER_LOG
+    grep "sshd" /var/log/auth.log | tail -n 5 >> $USER_LOG
     echo "-----------------" >> $USER_LOG
 }
 
@@ -67,8 +76,11 @@ monitor_resources() {
     echo "디스크 I/O 상태:" >> $RESOURCE_LOG
     iostat -x 1 1 >> $RESOURCE_LOG
     
-    echo "스왑 사용량:" >> $RESOURCE_LOG
-    swapon -s >> $RESOURCE_LOG
+    echo "시스템 온도:" >> $RESOURCE_LOG
+    check_temperature >> $RESOURCE_LOG
+    
+    echo "프로세스 상태 요약:" >> $RESOURCE_LOG
+    top -b -n 1 | head -n 5 >> $RESOURCE_LOG
     
     echo "-----------------" >> $RESOURCE_LOG
 }
@@ -90,6 +102,9 @@ monitor_processes() {
     echo "실행 시간이 긴 프로세스:" >> $PROCESS_LOG
     ps -eo pid,user,pcpu,pmem,time,comm --sort=-time | head -6 >> $PROCESS_LOG
     
+    echo "I/O 대기 프로세스:" >> $PROCESS_LOG
+    iostat -x | tail -n +7 >> $PROCESS_LOG
+    
     echo "-----------------" >> $PROCESS_LOG
 }
 
@@ -105,6 +120,9 @@ monitor_network() {
         
         echo "대역폭 사용량:" >> $NETWORK_LOG
         sar -n DEV 1 5 | grep $interface >> $NETWORK_LOG
+        
+        echo "인터페이스 상세 정보:" >> $NETWORK_LOG
+        ethtool $interface 2>/dev/null >> $NETWORK_LOG || echo "ethtool 정보 없음" >> $NETWORK_LOG
     done
     
     echo "TCP 연결 상태:" >> $NETWORK_LOG
@@ -115,6 +133,9 @@ monitor_network() {
     
     echo "네트워크 에러 통계:" >> $NETWORK_LOG
     netstat -s | grep -i error >> $NETWORK_LOG
+    
+    echo "DNS 응답 시간:" >> $NETWORK_LOG
+    dig google.com | grep "Query time" >> $NETWORK_LOG
     
     echo "-----------------" >> $NETWORK_LOG
 }
@@ -131,6 +152,7 @@ generate_report() {
 ## 1. 모니터링 정보
 - 분석 일자: ${current_date:0:4}년 ${current_date:4:2}월 ${current_date:6:2}일
 - 보고서 생성 시간: $(date +"%Y-%m-%d %H:%M:%S")
+- Ubuntu 버전: $(lsb_release -d | cut -f2)
 
 ## 2. 시스템 사양
 \`\`\`
@@ -139,21 +161,23 @@ $(free -h | head -2)
 $(df -h /)
 \`\`\`
 
-## 3. 시스템 부하 분석
+## 3. 시스템 상태
 ### CPU 사용률
 - 최대: $(grep "all" $RESOURCE_LOG | awk '{print $3}' | sort -nr | head -1)%
-- 평균: $(grep "all" $RESOURCE_LOG | awk '{sum+=$3} END {print sum/NR}')%
+- 평균: $(grep "all" $RESOURCE_LOG | awk '{sum+=$3} END {printf "%.1f%%", sum/NR}')
 
 ### 메모리 사용률
-- 사용 중: $(free -m | awk 'NR==2 {printf "%.2f%%", $3*100/$2}')
-- 가용: $(free -m | awk 'NR==2 {printf "%.2f%%", $4*100/$2}')
+- 사용 중: $(free -m | awk 'NR==2 {printf "%.1f%%", $3*100/$2}')
+- 가용: $(free -m | awk 'NR==2 {printf "%.1f%%", $4*100/$2}')
+- 스왑: $(free -m | awk 'NR==3 {printf "%.1f%%", $3*100/$2}')
 
-### 디스크 I/O
-$(iostat -x | grep "^[s|v]d[a-z]" | head -3)
+### 시스템 온도
+$(check_temperature)
 
 ## 4. 사용자 활동
 - 최대 동시접속: $(grep "접속 사용자 수:" $USER_LOG | awk '{print $4}' | sort -nr | head -1)명
 - 현재 접속자: $(who | wc -l)명
+- SSH 접속 시도: $(grep "sshd" /var/log/auth.log | grep "Accept" | wc -l)회
 
 ## 5. 네트워크 상태
 $(for interface in $NETWORK_INTERFACES; do
@@ -165,6 +189,7 @@ done)
 ## 6. 주요 이벤트
 - CPU 과부하(>80%): $(grep "all" $RESOURCE_LOG | awk '$3>80 {count++} END {print count}')회
 - 메모리 부족(<10%): $(grep "Mem:" $RESOURCE_LOG | awk '{if($4/$2<0.1) count++} END {print count}')회
+- 디스크 I/O 대기: $(iostat -x | awk '$10>10 {count++} END {print count}')회
 
 ## 7. 조치 필요 사항
 EOF
@@ -172,9 +197,11 @@ EOF
     # 조치사항 추가
     local cpu_high=$(grep "all" $RESOURCE_LOG | awk '$3>80 {count++} END {print count}')
     local mem_low=$(grep "Mem:" $RESOURCE_LOG | awk '{if($4/$2<0.1) count++} END {print count}')
+    local disk_io_high=$(iostat -x | awk '$10>10 {count++} END {print count}')
     
     [ $cpu_high -gt 0 ] && echo "- CPU 사용률 개선 필요" >> $report_file
     [ $mem_low -gt 0 ] && echo "- 메모리 증설 검토" >> $report_file
+    [ $disk_io_high -gt 0 ] && echo "- 디스크 I/O 최적화 필요" >> $report_file
 }
 
 # 일간 요약 보고서 생성
@@ -192,10 +219,12 @@ generate_daily_summary() {
 - CPU 평균: $(grep "all" $RESOURCE_LOG | awk '{sum+=$3} END {printf "%.1f%%", sum/NR}')
 - 메모리 사용률: $(free -m | awk 'NR==2 {printf "%.1f%%", $3*100/$2}')
 - 디스크 사용률: $(df -h / | awk 'NR==2 {print $5}')
+- 평균 시스템 온도: $(check_temperature | awk -F':' '{sum+=$2} END {printf "%.1f°C", sum/NR}')
 
 ### 접속자 통계
 - 최대: $(grep "접속 사용자 수:" $USER_LOG | awk '{print $4}' | sort -nr | head -1)명
 - 평균: $(grep "접속 사용자 수:" $USER_LOG | awk '{sum+=$4} END {printf "%.1f", sum/NR}')명
+- SSH 로그인 시도: $(grep "sshd" /var/log/auth.log | grep "Accept" | wc -l)회
 
 ### 네트워크 트래픽
 $(for interface in $NETWORK_INTERFACES; do
@@ -208,6 +237,7 @@ done)
 - 과부하 발생: $(grep "all" $RESOURCE_LOG | awk '$3>80 {count++} END {print count}')회
 - 메모리 부족: $(grep "Mem:" $RESOURCE_LOG | awk '{if($4/$2<0.1) count++} END {print count}')회
 - 디스크 I/O 대기: $(iostat -x | awk '$10>10 {count++} END {print count}')회
+- 네트워크 에러: $(netstat -s | grep -i error | wc -l)회
 
 ## 3. 상위 프로세스
 ### CPU 사용률 Top 3
@@ -227,96 +257,9 @@ EOF
     local cpu_high=$(grep "all" $RESOURCE_LOG | awk '$3>80 {count++} END {print count}')
     local mem_low=$(grep "Mem:" $RESOURCE_LOG | awk '{if($4/$2<0.1) count++} END {print count}')
     local disk_io_high=$(iostat -x | awk '$10>10 {count++} END {print count}')
+    local high_temp=$(check_temperature | awk -F':' '{if($2>80) count++} END {print count}')
     
     [ $cpu_high -gt 0 ] && echo "- CPU 사용률 개선 검토" >> $daily_summary
     [ $mem_low -gt 0 ] && echo "- 메모리 증설 검토" >> $daily_summary
     [ $disk_io_high -gt 0 ] && echo "- 디스크 I/O 최적화 필요" >> $daily_summary
-}
-
-# 서비스 시작
-start() {
-    if [ -f "$PID_FILE" ]; then
-        echo "서비스가 이미 실행 중입니다."
-        exit 1
-    fi
-    
-    {
-        echo $$ > $PID_FILE
-        cleanup_old_logs
-        
-        while true; do
-            CURRENT_DATE=$(date +"%Y%m%d")
-            
-            if [ ! -d "$BASE_DIR/$CURRENT_DATE" ]; then
-                if [ -n "$TODAY" ]; then
-                    generate_report $TODAY
-                    generate_daily_summary $TODAY
-                fi
-                
-                initialize_logs $CURRENT_DATE
-                TODAY=$CURRENT_DATE
-            fi
-            
-            monitor_users
-            monitor_resources
-            monitor_processes
-            monitor_network
-            
-            if [ "$(date +%M)" == "00" ]; then
-                generate_report $CURRENT_DATE
-                generate_daily_summary $CURRENT_DATE
-            fi
-            
-            sleep 300
-        done
-    } &
-    
-    echo "시스템 모니터링이 시작되었습니다. (PID: $!)"
-}
-
-# 서비스 중지
-stop() {
-    if [ ! -f "$PID_FILE" ]; then
-        echo "서비스가 실행 중이지 않습니다."
-        exit 1
-    fi
-    
-    PID=$(cat $PID_FILE)
-    kill -15 $PID
-    rm -f $PID_FILE
-    echo "시스템 모니터링이 중지되었습니다."
-}
-
-# 서비스 상태 확인
-status() {
-    if [ -f "$PID_FILE" ]; then
-        PID=$(cat $PID_FILE)
-        if ps -p $PID > /dev/null; then
-            echo "서비스가 실행 중입니다. (PID: $PID)"
-        else
-            echo "서비스가 비정상 종료되었습니다."
-            rm -f $PID_FILE
-        fi
-    else
-        echo "서비스가 실행 중이지 않습니다."
-    fi
-}
-
-# 명령어 처리
-case "$1" in
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    restart)
-        stop
-        sleep 1
-        start
-        ;;
-    status)
-        status
-        ;;
-    *)
-        echo "사용법: $0
+    [ $high
