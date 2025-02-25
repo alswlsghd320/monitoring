@@ -336,47 +336,87 @@
 
 - url: https://osoma.kr/blog/searchconsole-bigquery-export
   description: |
+    The article "Exporting Google Search Console Data to BigQuery" from Open Source Marketing provides a comprehensive guide on integrating Google Search Console with BigQuery to enhance data analysis and storage capabilities. It emphasizes that while Search Console offers valuable insights into website performance on Google Search, it has limitations in data retention and analysis depth. By exporting data to BigQuery, businesses can extend data retention beyond the default 16 months and perform advanced analyses using SQL queries.
+
+    The integration process involves several key steps:
     
+    1. **Google Cloud Account and Project Creation**: Users must first create a Google Cloud account and set up a new project dedicated to storing Search Console data.
+    
+    2. **BigQuery API Activation**: Within the Google Cloud project, both the BigQuery API and BigQuery Storage API need to be enabled to facilitate data transfer and storage.
+    
+    3. **Permission Configuration**: Proper permissions must be assigned to the Search Console service account (`[email protected]`) within the Google Cloud project. This involves granting roles such as BigQuery Job User and BigQuery Data Editor to ensure seamless data export.
+    
+    4. **Search Console Data Export Setup**: In the Search Console interface, users select the property to export, navigate to Settings > Bulk Data Export, and configure the export destination by entering the Google Cloud Project ID and selecting the desired dataset location.
+    
+    Once configured, data begins populating in BigQuery within 48 hours, with daily updates thereafter. The exported data is organized into three primary tables: ExportLog, which details export operations; searchdata_site_impression, providing performance metrics at the site level; and searchdata_url_impression, offering granular insights at the URL level.
+    
+    By leveraging this integration, businesses can perform in-depth analyses of search queries, user engagement, and content performance, leading to more informed decision-making and optimized marketing strategies. This approach not only overcomes the inherent limitations of Search Console but also empowers organizations to harness their search data for sustained business growth. 
 
 - url: https://osoma.kr/blog/ga4-ecommerce-metric-dimension
   description: |
+    The article "Understanding GA4 E-commerce Metrics and Dimensions" from Open Source Marketing discusses the implementation and analysis of e-commerce events in Google Analytics 4 (GA4). It emphasizes the importance of correctly setting up recommended e-commerce events such as purchase, add_to_cart, and view_item, along with their associated parameters, to effectively track user interactions and product information.
     
+    A key concept introduced is the 'items' parameter, which allows for the collection of detailed product information in an array format. This is particularly useful when a single event, like a purchase, involves multiple products. The 'items' array can include various attributes such as item_id, item_name, item_brand, item_category, price, and quantity, among others. Accurately capturing these details enables more granular analysis of product performance and user behavior.
+    
+    The article also highlights the distinction between event-level parameters and item-level details, noting that while event parameters like transaction_id and value are associated with the overall event, the 'items' array provides specifics about each product involved. Understanding this structure is crucial for setting up meaningful reports and analyses in GA4.
+    
+    In terms of reporting, GA4 offers predefined metrics and dimensions related to e-commerce, accessible through the Explorations feature. However, users should be aware of potential discrepancies in naming conventions, especially in translated interfaces, to ensure accurate data interpretation. By effectively implementing and analyzing these e-commerce events and parameters, businesses can gain deeper insights into their sales processes, optimize marketing strategies, and enhance overall performance. 
 
 - url: https://osoma.kr/blog/gas-02
   description: |
-    
+    The article from Open Source Marketing discusses a method to monitor Google Ads expenditure by time of day using Google Ads Scripts. It addresses the issue of potential ad downtime due to budget depletion, which may not be promptly detected if only daily checks are performed. To mitigate this, the article proposes a script that compares the current day's cumulative ad spend up to a specific hour with the average hourly spend over the past seven days. This approach allows for more immediate detection of under-spending, enabling timely adjustments to prevent ad interruptions. The script calculates the total ad spend for the current day and compares it to the average spend, sending an email alert if the current spend falls below a certain threshold. By implementing this script, businesses can ensure their ads run consistently, thereby maintaining steady traffic and potential revenue. The article provides the complete script and a detailed explanation of its components, facilitating easy implementation for users. 
 
 - url: https://osoma.kr/blog/ga4-search-console
   description: |
-    
+    The article from Open Source Marketing provides a detailed guide on integrating Google Analytics 4 (GA4) with Google Search Console to monitor organic search performance. It highlights that, unlike Universal Analytics, GA4 now supports Search Console integration, enabling users to access organic search data directly within GA4. To establish this connection, users must have 'Editor' permissions in GA4 and 'Owner' permissions in Search Console. The process begins by accessing the 'Admin' section in GA4, selecting 'Search Console Links' under the 'Property' column, and initiating a new link. Users then choose the appropriate Search Console property and the corresponding GA4 web stream, completing the setup by submitting the configuration. Once linked, it's advisable to wait approximately 24 hours for data synchronization before proceeding. To visualize Search Console data within GA4, users should navigate to the 'Reports' section, access the 'Library' at the bottom, and publish the 'Search Console' collection. This action adds the Search Console reports to the main navigation, allowing users to analyze organic search queries and landing pages directly in GA4. The 'Queries' report displays search terms that led users to the site, while the 'Google Organic Search Traffic' report shows the landing pages through which users arrived. It's important to note that Search Console data is not real-time; there's a two-day delay, and data retention spans 16 months. Integrating these tools streamlines the analysis process, eliminating the need to switch platforms and providing a cohesive view of website performance. By leveraging this integration, businesses can enhance their understanding of organic search metrics, leading to informed decisions that can improve marketing strategies and overall business performance. 
 
 - url: https://osoma.kr/blog/how-to-write-event-definition
   description: |
-    
+    The article Open Source provides a guide on creating definition document which catalogs user interactions a This document essential for event-based tools like GA4 Amplitude,a it behavior, offers a detailed of necessary points, and facilitates communication developers. The that template business critical events.  instance traditional newspaper might on content while new outlet video vews and free subscriptions.To craft a tailored event definition document, the article a five-step process: ) isualize the structure outlining the's features, akin creating ) Develop behavior scenarios to anticipate user. 3) and list necessary events and parameters foreach service screen, ensuring data is overlooked.4) Compile a preliminary list, referencigGoogle's recommended for GA4, for e-commerce services. 5) El duplicate events, merge similar, and roritize them to finalize document. , the article provides a template to create their eet, promoting a structured data collection. citeturn0search0 
 
 - url: https://osoma.kr/blog/cookieless-era-strategy
   description: |
+    The article from Open Source Marketing discusses the impending phase-out of third-party cookies and its significant impact on digital marketing strategies. Third-party cookies have been instrumental in enabling personalized advertising, automatic logins, and tailored content by tracking user behavior across websites. Their removal is primarily driven by growing concerns over user privacy, unconsented data collection, and the misuse of personal information. The absence of these cookies is expected to hinder personalized targeting capabilities, leading to increased advertising costs and reduced efficiency, with projections indicating a potential 10-20% rise in ad expenditures. To navigate this transition, the article recommends several strategies:
+
+    1. **Implementing User Consent Mechanisms**: Establishing systems that request and manage user consent for data collection, ensuring compliance with evolving privacy regulations.
     
+    2. **Search Engine Marketing (SEM)**: Shifting focus to SEM, particularly search ads, which align with user intent and often yield higher conversion rates compared to display ads.
+    
+    3. **Search Engine Optimization (SEO)**: Enhancing website structure and content to improve organic search visibility, thereby attracting users without relying on third-party data.
+    
+    4. **Customer Retention Strategies**: Developing initiatives to encourage repeat visits and foster loyalty, such as regular promotions or engagement activities, to mitigate the challenges of identifying returning users in a cookieless environment.
+    
+    5. **Customer Relationship Management (CRM) Systems**: Building robust CRM pipelines to systematically manage customer interactions, including automated reminders and personalized communications, to maintain engagement and satisfaction.
+    
+    By proactively adopting these approaches, businesses can adapt to the evolving digital landscape, maintain effective marketing practices, and continue to deliver personalized experiences despite the decline of third-party cookies. 
 
 - url: https://osoma.kr/blog/understand-da-01
   description: |
+    The article from Open Source Marketing delves into the characteristics of display advertising (DA), emphasizing its proactive approach in reaching customers. Unlike search ads that appear based on user intent through specific keyword searches, display ads are presented to users regardless of their immediate intentions, often while they are consuming other content. This necessitates that marketers design display ads with strategies that enhance brand awareness and capture user interest. The article suggests focusing on three key areas:
+
+    1. **Enhancing Brand Awareness**: Since users may not be familiar with the product, it's crucial to create ads that educate and inform, aiming to increase recognition and understanding before prompting a purchase.
     
+    2. **Stimulating Interest**: Given that display ads can be perceived as interruptions, it's important to craft engaging and intriguing content that resonates with users, transforming potential annoyance into curiosity.
+    
+    3. **Optimizing for Ad Placement**: Tailoring ad creatives to fit the specific characteristics of their placement ensures better user experience and effectiveness. This includes adapting to various platforms such as Kakao Bizboard, Naver Performance Ads, Facebook, Instagram, and Google Display Network, each with its unique format and audience.
+    
+    By aligning display advertising strategies with these considerations, businesses can effectively reach out to potential customers, foster interest, and ultimately drive conversions. 
 
 - url: https://osoma.kr/blog/bigquery-users-table-explain
   description: |
-    
+    The article from Open Source Marketing provides an in-depth analysis of the `users_YYYYMMDD` and `pseudonymous_users_YYYYMMDD` tables in Google Analytics 4 (GA4) when exported to BigQuery. The `users_YYYYMMDD` table stores daily data of logged-in users, focusing on user attributes such as first and last visit dates, device and location information, and audience membership details. In contrast, the `pseudonymous_users_YYYYMMDD` table captures data based on client IDs or app instance IDs, encompassing all users regardless of login status, thus offering comprehensive insights into overall user interactions. Both tables share similar structures but differ in their user identification methods. Key fields in these tables include user identification details (`user_id` for logged-in users and `pseudo_user_id` for all users), user information (e.g., `user_info.last_active_timestamp_micros`), device specifics (e.g., `device.operating_system`), geolocation data (e.g., `geo.city`), audience information (e.g., `audiences.id`), user properties (e.g., `user_properties.key`), lifetime value metrics (e.g., `user_ltv.revenue_in_usd`), and predictive analytics scores (e.g., `predictions.purchase_score_7d`). Understanding these tables and their fields is crucial for conducting detailed user behavior analysis and enhancing marketing strategies based on GA4 data exported to BigQuery. 
 
 - url: https://osoma.kr/blog/ga4-segment
   description: |
-    
+    The article from Open Source Marketing discusses the differences between segments in Universal Analytics (UA) and Google Analytics 4 (GA4), highlighting that in GA4, segments are only available in exploration reports, not in standard reports. It explains that GA4 allows for the creation of segments based on users, sessions, and events, offering more detailed analysis compared to UA. The article also introduces the concept of predictive audiences in GA4, enabling the identification of users likely to perform specific actions, such as making a purchase within seven days. Additionally, it provides a step-by-step guide on creating segments in GA4's exploration reports, emphasizing the importance of understanding the differences between user, session, and event-based segments to ensure accurate data analysis.  
 
 - url: https://osoma.kr/blog/canonical-url
   description: |
-    
+    The article from Open Source Marketing emphasizes the critical role of canonical URLs in SEO, particularly concerning indexing and content marketing. Canonical URLs, defined through the `<link rel="canonical" href="{URL}">` tag, address duplicate content issues by signaling to search engines the original source of content, thereby preventing potential SEO penalties. Additionally, the `<meta property="og:url" content="{URL}">` tag ensures accurate representation when content is shared on social media platforms, aligning social sharing with SEO strategies. Common challenges include URL parameters from tracking codes or filtering options, which can inadvertently create duplicate content. For instance, URLs like `https://osoma.kr/blog?utm_source=naver` or `https://osoma.kr/product?cate=cosmetics` may lead to multiple versions of the same content. To mitigate this, it's essential to set the canonical tag to the primary URL, guiding search engines to the preferred version. Errors such as incorrect canonical tags pointing to the wrong URLs or multiple canonical tags on a single page can confuse search engines, leading to indexing issues. Ensuring each page has a unique canonical tag that accurately reflects its URL is vital. In the absence of canonical tags, search engines might misinterpret duplicate content, potentially impacting search rankings. Therefore, implementing correct canonical tags is a fundamental step in optimizing a website's SEO performance. 
 
 - url: https://osoma.kr/blog/ga4-page-view-screen-view
   description: |
-    
+    The article from Open Source Marketing discusses the significance of `page_view` and `screen_view` events in Google Analytics 4 (GA4) for tracking user interactions on websites and mobile applications. Both events monitor 'views,' but `page_view` pertains to web page views, while `screen_view` relates to mobile app screen views. The `page_view` event triggers upon page load or browser history changes, capturing parameters like `page_title`, `page_location`, and `page_referrer`. Conversely, the `screen_view` event activates during app screen transitions, collecting data such as `firebase_screen`, `firebase_screen_class`, and `firebase_screen_id`. Understanding these events is crucial for analyzing user navigation paths and optimizing engagement strategies across platforms. GA4's reporting integrates both events, allowing comprehensive insights into user behavior on websites and mobile apps. Accurate implementation and analysis of these events enable businesses to enhance user experience and drive better marketing outcomes. citeturn0search0 
 
 - url: https://osoma.kr/blog/ga4-utm-guide
   description: |
